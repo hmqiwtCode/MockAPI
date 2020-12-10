@@ -14,6 +14,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.quy.mockapi.R;
 import com.quy.mockapi.entity.Work;
 
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkItem> {
@@ -39,7 +42,13 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkItem> {
     public void onBindViewHolder(@NonNull WorkItem holder, int position) {
         Work work = arrWork.get(position);
         holder.lblHeader.setText(work.getName());
-        holder.lblDateCreate.setText(work.getCreate()+"");
+
+        Timestamp ts = new Timestamp(work.getCreate());
+        Date date = new Date(ts.getTime());
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        String strDate= formatter.format(date);
+
+        holder.lblDateCreate.setText(strDate);
         holder.switch1.setChecked(work.isComplete());
 
     }
@@ -68,10 +77,18 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkItem> {
                     return false;
                 }
             });
+
+            switch1.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    workItemPos.workUpdateListener(getAdapterPosition(),switch1.isChecked());
+                }
+            });
         }
     }
 
     public interface WorkItemPos{
         void workPositionListener(int pos);
+        void workUpdateListener(int pos,boolean checked);
     }
 }

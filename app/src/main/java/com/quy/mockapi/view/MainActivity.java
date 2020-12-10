@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.Toast;
@@ -19,7 +20,6 @@ import com.quy.mockapi.adapter.WorkAdapter;
 import com.quy.mockapi.api.WorkApi;
 import com.quy.mockapi.entity.Work;
 
-import java.io.IOException;
 import java.util.List;
 
 import okhttp3.ResponseBody;
@@ -29,7 +29,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity  {
+public class MainActivity extends AppCompatActivity implements WorkAdapter.WorkItemPos {
 
     private Retrofit retrofit;
     private WorkApi workApi;
@@ -55,80 +55,47 @@ public class MainActivity extends AppCompatActivity  {
                 .build();
         workApi = retrofit.create(WorkApi.class);
 
-
         addWorks();
         getWorks();
+        //updateWork();
     }
 
-
-
-
-    private void getWorks(){
+    private void getWorks() {
         Call<List<Work>> call = workApi.getWork();
         call.enqueue(new Callback<List<Work>>() {
             @Override
             public void onResponse(Call<List<Work>> call, Response<List<Work>> response) {
-                if(!response.isSuccessful()){
+                if (!response.isSuccessful()) {
                     return;
                 }
                 listworks = response.body();
-                workAdapter = new WorkAdapter(listworks, MainActivity.this, new WorkAdapter.WorkItemPos() {
-                    @Override
-                    public void workPositionListener(int pos) {
-                        Work work = listworks.get(pos);
-                        new AlertDialog.Builder(MainActivity.this)
-                                .setTitle("Delete Works").setMessage("Are you sure you want to delete works?")
-                                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        Call<ResponseBody> call = workApi.deleteWork(work.getId());
-                                        call.enqueue(new Callback<ResponseBody>() {
-                                            @Override
-                                            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                                                if (!response.isSuccessful()){
-                                                    Log.e("delete fail","fail");
-                                                    return;
-                                                }
-                                                listworks.remove(pos);
-                                                workAdapter.notifyDataSetChanged();
-                                                Toast.makeText(MainActivity.this, "Successfully", Toast.LENGTH_SHORT).show();
-                                            }
-
-                                            @Override
-                                            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                                                Log.e("delete failure",t.toString());
-                                            }
-                                        });
-                                    }
-                                }).setNegativeButton("No", null).show();
-                    }
-                });
-                rvWork.setLayoutManager(new LinearLayoutManager(MainActivity.this,LinearLayoutManager.VERTICAL,false));
+                workAdapter = new WorkAdapter(listworks, MainActivity.this, MainActivity.this);
+                rvWork.setLayoutManager(new LinearLayoutManager(MainActivity.this, LinearLayoutManager.VERTICAL, false));
                 rvWork.setAdapter(workAdapter);
             }
 
             @Override
             public void onFailure(Call<List<Work>> call, Throwable t) {
-                Log.e("size",t.toString());
+                Log.e("size", t.toString());
             }
         });
     }
 
-    private void addWorks(){
+    private void addWorks() {
         btnCreate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Work work = new Work(txtWork.getText().toString(),System.currentTimeMillis(),switchComplete.isChecked());
+                Work work = new Work(txtWork.getText().toString(), System.currentTimeMillis(), switchComplete.isChecked());
                 resetForm();
                 Call<Work> call = workApi.createWork(work);
                 call.enqueue(new Callback<Work>() {
                     @Override
                     public void onResponse(Call<Work> call, Response<Work> response) {
-                        if (!response.isSuccessful()){
-                            Log.e("size","loi nao");
+                        if (!response.isSuccessful()) {
+                            Log.e("size", "loi nao");
                             return;
                         }
-                        Log.e("size",response.body().toString());
+                        Log.e("size", response.body().toString());
                         listworks.add(response.body());
                         workAdapter.notifyDataSetChanged();
                         Toast.makeText(MainActivity.this, "Successfully", Toast.LENGTH_SHORT).show();
@@ -136,16 +103,68 @@ public class MainActivity extends AppCompatActivity  {
 
                     @Override
                     public void onFailure(Call<Work> call, Throwable t) {
-                        Log.e("size",t.toString());
+                        Log.e("size", t.toString());
                     }
                 });
             }
         });
     }
 
-    private void resetForm(){
+    private void resetForm() {
         txtWork.setText("");
         switchComplete.setChecked(false);
+    }
+
+    @Override
+    public void workPositionListener(int pos) {
+        Work work = listworks.get(pos);
+        new AlertDialog.Builder(MainActivity.this)
+                .setTitle("Delete Works").setMessage("Are you sure you want to delete works?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Call<ResponseBody> call = workApi.deleteWork(work.getId());
+                        call.enqueue(new Callback<ResponseBody>() {
+                            @Override
+                            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                                if (!response.isSuccessful()) {
+                                    Log.e("delete fail", "fail");
+                                    return;
+                                }
+                                listworks.remove(pos);
+                                workAdapter.notifyDataSetChanged();
+                                Toast.makeText(MainActivity.this, "Successfully", Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                                Log.e("delete failure", t.toString());
+                            }
+                        });
+                    }
+                }).setNegativeButton("No", null).show();
+    }
+
+    @Override
+    public void workUpdateListener(int pos,boolean checked) {
+        Work work = listworks.get(pos);
+        work.setComplete(checked);
+        Call<Work> call = workApi.updateWork(work.getId(),work);
+        call.enqueue(new Callback<Work>() {
+            @Override
+            public void onResponse(Call<Work> call, Response<Work> response) {
+                if (!response.isSuccessful()) {
+                    Log.e("update fail", "fail");
+                    return;
+                }
+                Toast.makeText(MainActivity.this, "Successfully", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFailure(Call<Work> call, Throwable t) {
+                Log.e("update failure", t.toString());
+            }
+        });
     }
 
 

@@ -10,6 +10,7 @@ import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Path;
 
 public interface WorkApi {
@@ -24,6 +25,9 @@ public interface WorkApi {
 
     @DELETE("work/{id}")
     Call<ResponseBody> deleteWork(@Path("id") String workId);
+
+    @PUT("work/{id}")
+    Call<Work> updateWork(@Path("id") String workId, @Body Work work);
 
 
 
