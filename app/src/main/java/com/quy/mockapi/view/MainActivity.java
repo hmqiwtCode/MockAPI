@@ -4,6 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -17,15 +19,17 @@ import com.quy.mockapi.adapter.WorkAdapter;
 import com.quy.mockapi.api.WorkApi;
 import com.quy.mockapi.entity.Work;
 
+import java.io.IOException;
 import java.util.List;
 
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity  {
 
     private Retrofit retrofit;
     private WorkApi workApi;
@@ -68,7 +72,37 @@ public class MainActivity extends AppCompatActivity {
                     return;
                 }
                 listworks = response.body();
-                workAdapter = new WorkAdapter(listworks,MainActivity.this);
+                workAdapter = new WorkAdapter(listworks, MainActivity.this, new WorkAdapter.WorkItemPos() {
+                    @Override
+                    public void workPositionListener(int pos) {
+                        Work work = listworks.get(pos);
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setTitle("Delete Works").setMessage("Are you sure you want to delete works?")
+                                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        Call<ResponseBody> call = workApi.deleteWork(work.getId());
+                                        call.enqueue(new Callback<ResponseBody>() {
+                                            @Override
+                                            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                                                if (!response.isSuccessful()){
+                                                    Log.e("delete fail","fail");
+                                                    return;
+                                                }
+                                                listworks.remove(pos);
+                                                workAdapter.notifyDataSetChanged();
+                                                Toast.makeText(MainActivity.this, "Successfully", Toast.LENGTH_SHORT).show();
+                                            }
+
+                                            @Override
+                                            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                                                Log.e("delete failure",t.toString());
+                                            }
+                                        });
+                                    }
+                                }).setNegativeButton("No", null).show();
+                    }
+                });
                 rvWork.setLayoutManager(new LinearLayoutManager(MainActivity.this,LinearLayoutManager.VERTICAL,false));
                 rvWork.setAdapter(workAdapter);
             }
@@ -113,4 +147,6 @@ public class MainActivity extends AppCompatActivity {
         txtWork.setText("");
         switchComplete.setChecked(false);
     }
+
+
 }

@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,11 +20,13 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkItem> {
 
     private List<Work> arrWork;
     private Context context;
+    private WorkItemPos workItemPos;
 
 
-    public WorkAdapter(List<Work> arrWork, Context context) {
+    public WorkAdapter(List<Work> arrWork, Context context,WorkItemPos workItemPos) {
         this.arrWork = arrWork;
         this.context = context;
+        this.workItemPos = workItemPos;
     }
 
     @NonNull
@@ -56,6 +59,19 @@ public class WorkAdapter extends RecyclerView.Adapter<WorkAdapter.WorkItem> {
             lblHeader = itemView.findViewById(R.id.lblHeader);
             lblDateCreate = itemView.findViewById(R.id.lblDateCreate);
             switch1 = itemView.findViewById(R.id.switch1);
+
+
+            itemView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View view) {
+                    workItemPos.workPositionListener(getAdapterPosition());
+                    return false;
+                }
+            });
         }
+    }
+
+    public interface WorkItemPos{
+        void workPositionListener(int pos);
     }
 }
