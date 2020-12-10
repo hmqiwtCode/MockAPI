@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements WorkAdapter.WorkI
             }
 
             @Override
-            public void onFailure(Call<Work> call, Throwable t) {
+            public void onFailure(Call<Work> call, Throwable t ) {
                 Log.e("update failure", t.toString());
             }
         });
