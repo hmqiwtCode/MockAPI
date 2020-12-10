@@ -6,6 +6,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.Toast;
 
 import com.quy.mockapi.R;
@@ -26,12 +30,20 @@ public class MainActivity extends AppCompatActivity {
     private Retrofit retrofit;
     private WorkApi workApi;
     private RecyclerView rvWork;
+    private Button btnCreate;
+    private Switch switchComplete;
+    private EditText txtWork;
+    private WorkAdapter workAdapter;
+    private List<Work> listworks;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         rvWork = findViewById(R.id.rvWork);
+        btnCreate = findViewById(R.id.btnCreate);
+        switchComplete = findViewById(R.id.switchComplete);
+        txtWork = findViewById(R.id.txtWork);
 
         retrofit = new Retrofit.Builder()
                 .baseUrl("https://5fd220e5b485ea0016eef7ea.mockapi.io/todo/")
@@ -39,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
                 .build();
         workApi = retrofit.create(WorkApi.class);
 
+
+        addWorks();
         getWorks();
     }
 
@@ -53,8 +67,8 @@ public class MainActivity extends AppCompatActivity {
                 if(!response.isSuccessful()){
                     return;
                 }
-
-                WorkAdapter workAdapter = new WorkAdapter(response.body(),MainActivity.this);
+                listworks = response.body();
+                workAdapter = new WorkAdapter(listworks,MainActivity.this);
                 rvWork.setLayoutManager(new LinearLayoutManager(MainActivity.this,LinearLayoutManager.VERTICAL,false));
                 rvWork.setAdapter(workAdapter);
             }
@@ -64,5 +78,39 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("size",t.toString());
             }
         });
+    }
+
+    private void addWorks(){
+        btnCreate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Work work = new Work(txtWork.getText().toString(),System.currentTimeMillis(),switchComplete.isChecked());
+                resetForm();
+                Call<Work> call = workApi.createWork(work);
+                call.enqueue(new Callback<Work>() {
+                    @Override
+                    public void onResponse(Call<Work> call, Response<Work> response) {
+                        if (!response.isSuccessful()){
+                            Log.e("size","loi nao");
+                            return;
+                        }
+                        Log.e("size",response.body().toString());
+                        listworks.add(response.body());
+                        workAdapter.notifyDataSetChanged();
+                        Toast.makeText(MainActivity.this, "Successfully", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onFailure(Call<Work> call, Throwable t) {
+                        Log.e("size",t.toString());
+                    }
+                });
+            }
+        });
+    }
+
+    private void resetForm(){
+        txtWork.setText("");
+        switchComplete.setChecked(false);
     }
 }
